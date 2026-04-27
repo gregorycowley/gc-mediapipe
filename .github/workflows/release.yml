@@ -1,0 +1,88 @@
+# Builds Electron distributables with electron-builder and attaches them to a GitHub Release.
+#
+# Trigger a release: push an annotated tag matching v*, e.g.
+#   git tag -a v1.0.1 -m "Release 1.0.1"
+#   git push origin v1.0.1
+#
+# Manual run: Actions → "Release Hand Lab" → Run workflow (build artifacts only; no Release publish).
+
+name: Release Hand Lab
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # postinstall vendors MediaPipe WASM + downloads hand_landmarker.task (network required once per job).
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build installers (electron-builder)
+        run: npm run dist
+        env:
+          CI: true
+          # Unsigned builds on GitHub-hosted macOS (no Apple Developer cert in CI).
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ runner.os }}
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
+          files: |
+            release-assets/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
