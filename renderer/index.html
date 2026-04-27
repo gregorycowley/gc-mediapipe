@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; media-src 'self' blob:; img-src 'self' blob: data:; connect-src 'self' blob: file:; worker-src 'self' blob:;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; media-src 'self' blob:; img-src 'self' blob: data:; connect-src 'self' blob: file: ws: wss:; worker-src 'self' blob:;" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hand Lab</title>
     <link rel="stylesheet" href="./styles.css" />
@@ -72,6 +72,34 @@
             <input type="checkbox" id="drawIndex" />
             <span>Show landmark indices</span>
           </label>
+
+          <h2>WebSocket</h2>
+          <label class="field">
+            <span>Bridge URL</span>
+            <input id="wsUrl" type="text" spellcheck="false" inputmode="url" placeholder="ws://127.0.0.1:8787" />
+          </label>
+          <div class="row">
+            <button type="button" class="btn" id="wsConnectBtn">Connect</button>
+            <button type="button" class="btn btn-ghost" id="wsDisconnectBtn" disabled>Disconnect</button>
+          </div>
+          <div class="statusline" id="wsStatus">WS: disconnected</div>
+
+          <h2>Gestures</h2>
+          <div class="row">
+            <button type="button" class="btn" id="captureBtn">Capture pose</button>
+            <button type="button" class="btn btn-ghost" id="deleteGestureBtn" disabled>Delete</button>
+          </div>
+          <label class="field">
+            <span>Selected gesture threshold</span>
+            <input type="range" id="gestureThreshold" min="0.01" max="0.40" step="0.01" value="0.10" disabled />
+            <output id="gestureThresholdOut">0.10</output>
+          </label>
+          <label class="field">
+            <span>Cooldown (ms)</span>
+            <input type="number" id="gestureCooldown" min="0" max="5000" step="50" value="500" disabled />
+          </label>
+          <div class="statusline" id="gestureStatus">No gestures yet.</div>
+          <ol class="gesture-list" id="gestureList"></ol>
 
           <h2>Try this</h2>
           <ul class="hints">

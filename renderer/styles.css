@@ -210,15 +210,122 @@ canvas {
 }
 
 select,
+input[type="text"],
+input[type="number"],
 input[type="range"] {
   width: 100%;
   accent-color: var(--accent-dim);
+}
+
+input[type="text"],
+input[type="number"] {
+  font: inherit;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  border-color: rgba(110, 231, 183, 0.55);
+  box-shadow: 0 0 0 3px rgba(110, 231, 183, 0.12);
+}
+
+input[type="text"]::placeholder {
+  color: rgba(139, 149, 168, 0.7);
 }
 
 output {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
   font-size: 0.8rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin: 0.2rem 0 0.9rem;
+}
+
+.btn {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid rgba(110, 231, 183, 0.35);
+  background: rgba(110, 231, 183, 0.12);
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  border-color: rgba(110, 231, 183, 0.65);
+  background: rgba(110, 231, 183, 0.16);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--muted);
+}
+
+.btn-ghost:hover {
+  border-color: rgba(110, 231, 183, 0.35);
+  color: var(--text);
+}
+
+.statusline {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: -0.35rem 0 0.9rem;
+}
+
+.gesture-list {
+  margin: 0 0 0.9rem;
+  padding-left: 1.2rem;
+  font-size: 0.84rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.55rem 0.55rem 1.6rem;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.gesture-list li {
+  margin: 0.15rem 0;
+}
+
+.gesture-list button {
+  font: inherit;
+  font-size: 0.84rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.gesture-list button:hover {
+  border-color: rgba(110, 231, 183, 0.25);
+  color: var(--text);
+}
+
+.gesture-list button[aria-current="true"] {
+  border-color: rgba(110, 231, 183, 0.55);
+  color: var(--accent);
 }
 
 .hints {
