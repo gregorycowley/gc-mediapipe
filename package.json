@@ -1,0 +1,47 @@
+{
+  "name": "gc-mediapipe",
+  "version": "1.0.0",
+  "description": "Electron + MediaPipe hand tracking lab for students",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "postinstall": "node scripts/vendor-mediapipe.cjs",
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "keywords": ["electron", "mediapipe", "hand-tracking", "education"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.34"
+  },
+  "devDependencies": {
+    "electron": "^41.2.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.handlab.mediapipe",
+    "productName": "Hand Lab",
+    "files": [
+      "electron/**/*",
+      "renderer/**/*",
+      "vendor/**/*",
+      "package.json"
+    ],
+    "asarUnpack": ["vendor/**"],
+    "mac": {
+      "category": "public.app-category.education",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Hand Lab uses the camera so you can experiment with on-device hand tracking."
+      }
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}
