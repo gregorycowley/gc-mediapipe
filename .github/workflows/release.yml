@@ -81,14 +81,22 @@ jobs:
           path: release-assets
           merge-multiple: true
 
-      - name: Publish GitHub Release (installers only)
+      # electron-builder puts NSIS exe + DMGs at dist root, but also win-unpacked/ etc. (~500 files).
+      # Attach only installers: *.dmg, *.exe outside win-unpacked/, *.zip (never helpers under unpacked trees).
+      - name: Stage installers for Release
+        run: |
+          mkdir -p release-upload
+          find release-assets -type f \( -iname '*.dmg' -o -iname '*.zip' \) -exec cp -n {} release-upload/ \;
+          find release-assets -type f -iname '*.exe' ! -path '*/win-unpacked/*' -exec cp -n {} release-upload/ \;
+          echo "Release files:"
+          ls -la release-upload/
+
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
-          files: |
-            release-assets/**/*.exe
-            release-assets/**/*.dmg
+          files: release-upload/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
