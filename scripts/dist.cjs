@@ -38,6 +38,10 @@ if (inGitHub) {
   }
 }
 
+// Avoid electron-builder implicit GitHub publish on tagged CI builds (needs GH_TOKEN).
+// Releases are attached by .github/workflows/release.yml instead.
+extraArgs.push("--publish", "never");
+
 const result = spawnSync(process.execPath, [cli, ...extraArgs], {
   cwd: root,
   stdio: "inherit",

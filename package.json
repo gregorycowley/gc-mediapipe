@@ -8,7 +8,7 @@
     "start": "electron .",
     "clean": "node scripts/clean.cjs",
     "dist": "node scripts/dist.cjs",
-    "dist:all": "electron-builder"
+    "dist:all": "electron-builder --publish never"
   },
   "keywords": ["electron", "mediapipe", "hand-tracking", "education"],
   "author": "",
@@ -22,6 +22,7 @@
     "electron-builder": "^26.0.12"
   },
   "build": {
+    "publish": "never",
     "appId": "com.handlab.mediapipe",
     "productName": "Hand Lab",
     "files": [
