@@ -47,6 +47,7 @@ const wsUrlEl = document.getElementById('wsUrl');
 const wsConnectBtn = document.getElementById('wsConnectBtn');
 const wsDisconnectBtn = document.getElementById('wsDisconnectBtn');
 const wsStatusEl = document.getElementById('wsStatus');
+const wsBridgeHintEl = document.getElementById('wsBridgeHint');
 
 const captureBtn = document.getElementById('captureBtn');
 const deleteGestureBtn = document.getElementById('deleteGestureBtn');
@@ -485,6 +486,26 @@ async function main() {
 
     gestures = loadGestures();
     renderGestures();
+
+    async function refreshWsBridgeHint() {
+        if (!wsBridgeHintEl || !window.electronAPI?.getWsBridgeStatus) return;
+        const st = await window.electronAPI.getWsBridgeStatus();
+        if (st.error) {
+            wsBridgeHintEl.textContent = `Hub: ${st.error}`;
+            return;
+        }
+        if (st.connectUrl) {
+            const lan =
+                st.listenHost === '0.0.0.0'
+                    ? ` Other devices on your network: ws://<this-computer-IP>:${st.port}`
+                    : '';
+            wsBridgeHintEl.textContent = `In-app hub ${st.connectUrl} — use the same URL in Figma (or Connect in this app).${lan} (${st.clientCount} client(s))`;
+        } else {
+            wsBridgeHintEl.textContent = 'Hub: starting…';
+        }
+    }
+    await refreshWsBridgeHint();
+    setTimeout(refreshWsBridgeHint, 500);
 
     const paths = await window.electronAPI.getMediapipePaths();
     const {HandLandmarker, FilesetResolver} = await import(

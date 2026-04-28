@@ -1,6 +1,6 @@
 {
   "name": "gc-mediapipe",
-  "version": "1.0.0",
+  "version": "0.9.01",
   "description": "Electron + MediaPipe hand tracking lab for students",
   "main": "electron/main.cjs",
   "scripts": {
@@ -15,14 +15,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@mediapipe/tasks-vision": "^0.10.34"
+    "@mediapipe/tasks-vision": "^0.10.34",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "electron": "34.5.8",
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "publish": "never",
     "appId": "com.handlab.mediapipe",
     "productName": "Hand Lab",
     "files": [

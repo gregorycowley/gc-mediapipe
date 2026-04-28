@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, systemPreferences, shell } = require("elect
 const path = require("path");
 const { pathToFileURL } = require("url");
 const { execFile } = require("child_process");
+const { startBridge, getStatus, stopBridge } = require("./ws-bridge.cjs");
 
 // Optional workaround if Electron traps at launch with EXC_BREAKPOINT during V8 init (macOS).
 // Slows JS/WASM (including MediaPipe); use only if needed:
@@ -71,6 +72,8 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  startBridge();
+  ipcMain.handle("ws-bridge-status", () => getStatus());
   ipcMain.handle("mediapipe-paths", () => mediapipePaths());
   ipcMain.handle("camera-permission", () => ensureCameraPermission());
   ipcMain.handle("open-camera-privacy-settings", async () => {
@@ -95,4 +98,8 @@ app.whenReady().then(async () => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+app.on("before-quit", () => {
+  stopBridge();
 });

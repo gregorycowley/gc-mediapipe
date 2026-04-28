@@ -12,6 +12,8 @@ npm start
 - Allow **camera** access when the system or browser layer prompts you.
 - On macOS, packaged builds include a camera usage string in `package.json` (`build.mac.extendInfo.NSCameraUsageDescription`).
 
+For the **built-in WebSocket hub** (Hand Lab ↔ Figma), default URL and environment variables are documented in **[WEBSOCKET.md](WEBSOCKET.md)**.
+
 ### Camera access on macOS
 
 - **`npm start` (development):** System Settings → Privacy & Security → **Camera** lists the app as **Electron** (`com.github.Electron`), not “Hand Lab”. Turn the toggle **on** for Electron, then quit and run `npm start` again.
@@ -25,8 +27,9 @@ npm start
 
 | Path | Purpose |
 |------|---------|
-| `electron/main.cjs` | Main process: window, macOS camera permission, IPC that exposes absolute `file://` URLs for WASM and the model |
-| `electron/preload.cjs` | Preload: `getMediapipePaths`, `requestCameraPermission` |
+| `electron/main.cjs` | Main process: window, macOS camera permission, WebSocket hub startup, IPC that exposes absolute `file://` URLs for WASM and the model |
+| `electron/ws-bridge.cjs` | In-app WebSocket relay for Figma / LAN clients — see [WEBSOCKET.md](WEBSOCKET.md) |
+| `electron/preload.cjs` | Preload: `getMediapipePaths`, `requestCameraPermission`, `getWsBridgeStatus` |
 | `renderer/` | UI: webcam, canvas overlay, controls, short tips, landmark legend |
 | `scripts/vendor-mediapipe.cjs` | Postinstall: copy WASM + `vision_bundle.mjs` from `node_modules`, download `hand_landmarker.task` if missing |
 | `build/entitlements.mac.plist` | macOS hardened runtime: allows camera for signed `.app` builds (`electron-builder` merges with defaults) |
