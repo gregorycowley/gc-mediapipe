@@ -1,10 +1,14 @@
-# Builds Electron distributables with electron-builder and attaches them to a GitHub Release.
+# Build distributables on GitHub (do NOT commit `dist/` — it is gitignored and too large for git).
+# Local `npm run dist` = Apple Silicon DMG only; this workflow builds Intel + Apple Silicon DMGs + Windows NSIS (3 outputs across 2 runners).
+# Artifacts: download from the workflow run, or from a GitHub Release when you push a tag.
 #
-# Trigger a release: push an annotated tag matching v*, e.g.
+# Tag → Release (macOS: Intel + Apple Silicon DMGs only; Windows: NSIS x64):
 #   git tag -a v1.0.1 -m "Release 1.0.1"
 #   git push origin v1.0.1
 #
-# Manual run: Actions → "Release Hand Lab" → Run workflow (build artifacts only; no Release publish).
+# Manual: Actions → "Release Hand Lab" → Run workflow → Artifacts (no Release unless you also use a tag).
+#
+# If you ever committed `dist/` by mistake:  git rm -r --cached dist
 
 name: Release Hand Lab
 
@@ -58,6 +62,7 @@ jobs:
           name: dist-${{ runner.os }}
           path: dist/
           if-no-files-found: error
+          retention-days: 30
 
   release:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')

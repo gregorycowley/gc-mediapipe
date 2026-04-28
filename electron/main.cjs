@@ -3,6 +3,13 @@ const path = require("path");
 const { pathToFileURL } = require("url");
 const { execFile } = require("child_process");
 
+// Optional workaround if Electron traps at launch with EXC_BREAKPOINT during V8 init (macOS).
+// Slows JS/WASM (including MediaPipe); use only if needed:
+//   HAND_LAB_JITLESS=1 npm start
+if (process.platform === "darwin" && process.env.HAND_LAB_JITLESS === "1") {
+  app.commandLine.appendSwitch("js-flags", "--jitless");
+}
+
 function mediapipeRootDiskPath() {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, "app.asar.unpacked", "vendor", "mediapipe");

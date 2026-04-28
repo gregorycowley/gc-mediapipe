@@ -6,7 +6,9 @@
   "scripts": {
     "postinstall": "node scripts/vendor-mediapipe.cjs",
     "start": "electron .",
-    "dist": "electron-builder"
+    "clean": "node scripts/clean.cjs",
+    "dist": "node scripts/dist.cjs",
+    "dist:all": "electron-builder"
   },
   "keywords": ["electron", "mediapipe", "hand-tracking", "education"],
   "author": "",
@@ -16,7 +18,7 @@
     "@mediapipe/tasks-vision": "^0.10.34"
   },
   "devDependencies": {
-    "electron": "^41.2.1",
+    "electron": "34.5.8",
     "electron-builder": "^26.0.12"
   },
   "build": {
@@ -31,14 +33,24 @@
     "asarUnpack": ["vendor/**"],
     "mac": {
       "category": "public.app-category.education",
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
+      "identity": null,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
       "extendInfo": {
         "NSCameraUsageDescription": "Hand Lab uses the camera so you can experiment with on-device hand tracking."
       }
     },
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
     },
     "directories": {
       "output": "dist"
