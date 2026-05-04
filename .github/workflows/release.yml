@@ -68,18 +68,36 @@ jobs:
           # Manual: optional snapshot (tag/SHA). Push-to-tag: always that tag ref.
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.checkout_ref || github.ref }}
 
+      - name: Resolve app directory
+        id: paths
+        shell: bash
+        run: |
+          for d in "." "app" "desktop-app" "handbridge-app"; do
+            if [ -f "$d/package.json" ] && [ -f "$d/scripts/dist.cjs" ]; then
+              echo "app_dir=$d" >> "$GITHUB_OUTPUT"
+              echo "dist_dir=$d/dist" >> "$GITHUB_OUTPUT"
+              echo "Using app directory: $d"
+              exit 0
+            fi
+          done
+          echo "::error::Could not find Electron app directory (expected package.json + scripts/dist.cjs)."
+          exit 1
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
+          cache-dependency-path: ${{ steps.paths.outputs.app_dir }}/package-lock.json
 
       # postinstall vendors MediaPipe WASM + downloads hand_landmarker.task (network required once per job).
       - name: Install dependencies
         run: npm ci
+        working-directory: ${{ steps.paths.outputs.app_dir }}
 
       - name: Build installers (electron-builder)
         run: npm run dist
+        working-directory: ${{ steps.paths.outputs.app_dir }}
         env:
           CI: true
           # Unsigned builds on GitHub-hosted macOS (no Apple Developer cert in CI).
@@ -89,7 +107,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: dist-${{ runner.os }}
-          path: dist/
+          path: ${{ steps.paths.outputs.dist_dir }}/
           if-no-files-found: error
           retention-days: 30
 
