@@ -1,6 +1,13 @@
-# Hand Lab
+# Hand Bridge
 
-**Hand Lab** is an Electron desktop app for experimenting with on-device hand tracking using [MediaPipe Hand Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) (`@mediapipe/tasks-vision`). After a normal install, WASM, the JavaScript bundle, and the model file live under `vendor/mediapipe/`, so **runtime hand tracking does not need an internet connection**. The first `npm install` downloads the `.task` model once (see [Requirements](#requirements)).
+**Hand Bridge** is an Electron desktop app for experimenting with on-device hand tracking using [MediaPipe Hand Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) (`@mediapipe/tasks-vision`). After a normal install, WASM, the JavaScript bundle, and the model file live under `vendor/mediapipe/`, so **runtime hand tracking does not need an internet connection**. The first `npm install` downloads the `.task` model once (see [Requirements](#requirements)).
+
+## Start Here
+
+- Students: `QUICK_START_STUDENTS.md`
+- Full student setup: `STUDENT_SETUP.md`
+- Teacher distribution workflow: `TEACHER_DISTRIBUTION.md`
+- Figma plugin folder: `handbridge-figma-plugin/`
 
 ## Quick start
 
@@ -12,12 +19,12 @@ npm start
 - Allow **camera** access when the system or browser layer prompts you.
 - On macOS, packaged builds include a camera usage string in `package.json` (`build.mac.extendInfo.NSCameraUsageDescription`).
 
-For the **built-in WebSocket hub** (Hand Lab ↔ Figma), default URL and environment variables are documented in **[WEBSOCKET.md](WEBSOCKET.md)**.
+For the **built-in WebSocket hub** (Hand Bridge ↔ Figma), default URL and environment variables are documented in **[WEBSOCKET.md](WEBSOCKET.md)**.
 
 ### Camera access on macOS
 
-- **`npm start` (development):** System Settings → Privacy & Security → **Camera** lists the app as **Electron** (`com.github.Electron`), not “Hand Lab”. Turn the toggle **on** for Electron, then quit and run `npm start` again.
-- **Packaged `Hand Lab.app`:** Look for **Hand Lab** in the same Camera list. Signed builds use `build/entitlements.mac.plist` so the hardened runtime is allowed to use the camera.
+- **`npm start` (development):** System Settings → Privacy & Security → **Camera** lists the app as **Electron** (`com.github.Electron`), not “Hand Bridge”. Turn the toggle **on** for Electron, then quit and run `npm start` again.
+- **Packaged `Hand Bridge.app`:** Look for **Hand Bridge** in the same Camera list. Signed builds use `build/entitlements.mac.plist` so the hardened runtime is allowed to use the camera.
 - The in-app **“Open Camera privacy settings”** button tries to open the right System Settings pane (macOS only).
 - If permission was denied earlier and nothing appears in the list, reset the decision for development builds with  
   `tccutil reset Camera com.github.Electron`  
@@ -34,6 +41,7 @@ For the **built-in WebSocket hub** (Hand Lab ↔ Figma), default URL and environ
 | `scripts/vendor-mediapipe.cjs` | Postinstall: copy WASM + `vision_bundle.mjs` from `node_modules`, download `hand_landmarker.task` if missing |
 | `build/entitlements.mac.plist` | macOS hardened runtime: allows camera for signed `.app` builds (`electron-builder` merges with defaults) |
 | `vendor/mediapipe/` | **Generated** (see `.gitignore`). Recreated by `postinstall`. |
+| `handbridge-figma-plugin/` | Figma plugin project (manifest, UI, TS source, and `build/code.js`) |
 
 ## npm scripts
 
@@ -61,7 +69,7 @@ Packaged apps **unpack** the whole `vendor/` tree (`asarUnpack: ["vendor/**"]`) 
 
 ## Packaging notes
 
-- Default product name in builds: **Hand Lab** (`package.json` → `build.productName`).
+- Default product name in builds: **Hand Bridge** (`package.json` → `build.productName`).
 - macOS category is set to education; adjust `build` in `package.json` for icons, notarization, or extra targets (Windows NSIS, Linux, etc.) as needed.
 
 ## Licenses

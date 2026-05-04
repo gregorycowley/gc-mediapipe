@@ -1,0 +1,22 @@
+{
+  "name": "Hand Bridge",
+  "id": "1628413532432733221",
+  "api": "1.0.0",
+  "main": "build/code.js",
+  "ui": "ui.html",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": [
+    "figma"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ],
+    "reasoning": "Development-only: connect to a local WebSocket bridge from the plugin UI to receive gesture events.",
+    "devAllowedDomains": [
+      "ws://localhost:8787"
+    ]
+  }
+}

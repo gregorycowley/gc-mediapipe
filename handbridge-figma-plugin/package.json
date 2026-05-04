@@ -1,0 +1,24 @@
+{
+  "name": "gc-mediapipe2f",
+  "version": "1.0.0",
+  "description": "Hand Bridge Figma plugin",
+  "main": "build/code.js",
+  "scripts": {
+    "prebuild": "node scripts/bump-build-version.cjs",
+    "build": "npx esbuild code.ts --bundle --outfile=build/code.js --format=iife --target=es2017 --loader:.html=text",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "watch": "npm run build -- --watch"
+  },
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@figma/eslint-plugin-figma-plugins": "*",
+    "@figma/plugin-typings": "*",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.39.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.1"
+  }
+}

@@ -7,7 +7,8 @@ Use this guide to install and run **Hand Bridge** with the Figma plugin.
 - A computer with a webcam
 - Figma desktop app (recommended) or Figma in browser
 - Hand Bridge installer from your instructor (`.dmg` on macOS or `.exe` on Windows)
-- Hand Bridge Figma plugin folder from your instructor (must include `manifest.json`, `code.js`, and `ui.html`)
+- Hand Bridge Figma plugin folder from your instructor (`handbridge-figma-plugin/`)
+- The plugin folder should include `manifest.json`, `build/code.js`, and `ui.html`
 
 ## Part 1: Install and Open Hand Bridge
 
@@ -23,7 +24,8 @@ Use this guide to install and run **Hand Bridge** with the Figma plugin.
 1. Open Figma.
 2. Go to:
    - `Plugins` -> `Development` -> `Import plugin from manifest...`
-3. Select the `manifest.json` file from the plugin folder provided by your instructor.
+3. Select:
+   - `handbridge-figma-plugin/manifest.json`
 4. Run the plugin:
    - `Plugins` -> `Development` -> `Hand Bridge`
 
@@ -55,7 +57,7 @@ Use this guide to install and run **Hand Bridge** with the Figma plugin.
 ### Plugin does not show latest changes
 
 - Stop and rerun the plugin in Figma.
-- If needed, remove and re-import the plugin from `manifest.json`.
+- If needed, remove and re-import from `handbridge-figma-plugin/manifest.json`.
 
 ### Gesture detected, but Figma does not update
 

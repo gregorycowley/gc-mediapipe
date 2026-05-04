@@ -1,0 +1,12 @@
+node_modules/
+dist/
+vendor/
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+*.code-workspace
+gc-mediapipe.code-workspace
+
+# Plugin build output (if plugin lives inside this repo)
+handbridge-figma-plugin/build/
