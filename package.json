@@ -1,10 +1,12 @@
 {
   "name": "gc-mediapipe",
   "version": "0.9.03",
-  "description": "Electron + MediaPipe hand tracking lab for students",
+  "description": "Hand Bridge: Electron + MediaPipe hand tracking app for students",
   "main": "electron/main.cjs",
   "scripts": {
     "postinstall": "node scripts/vendor-mediapipe.cjs",
+    "predist": "node scripts/bump-build-version.cjs",
+    "predist:all": "node scripts/bump-build-version.cjs",
     "start": "electron .",
     "clean": "node scripts/clean.cjs",
     "dist": "node scripts/dist.cjs",
@@ -24,11 +26,12 @@
   },
   "build": {
     "appId": "com.handlab.mediapipe",
-    "productName": "Hand Lab",
+    "productName": "Hand Bridge",
     "files": [
       "electron/**/*",
       "renderer/**/*",
       "vendor/**/*",
+      "build-version.json",
       "package.json"
     ],
     "asarUnpack": ["vendor/**"],
@@ -42,7 +45,7 @@
         }
       ],
       "extendInfo": {
-        "NSCameraUsageDescription": "Hand Lab uses the camera so you can experiment with on-device hand tracking."
+        "NSCameraUsageDescription": "Hand Bridge uses the camera so you can experiment with on-device hand tracking."
       }
     },
     "win": {

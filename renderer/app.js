@@ -28,10 +28,12 @@ const video = document.getElementById('video');
 const canvas = document.getElementById('overlay');
 const ctx = canvas.getContext('2d');
 const statusEl = document.getElementById('status');
+const appBuildEl = document.getElementById('appBuild');
 const videoWrap = document.getElementById('videoWrap');
 const fpsLabel = document.getElementById('fpsLabel');
 const handsLabel = document.getElementById('handsLabel');
 const landmarkLegend = document.getElementById('landmarkLegend');
+const helpPopoverEl = document.getElementById('helpPopover');
 
 const numHandsEl = document.getElementById('numHands');
 const minHandEl = document.getElementById('minHand');
@@ -50,18 +52,71 @@ const wsStatusEl = document.getElementById('wsStatus');
 const wsBridgeHintEl = document.getElementById('wsBridgeHint');
 
 const captureBtn = document.getElementById('captureBtn');
+const nameModal = document.getElementById('nameModal');
+const nameModalInput = document.getElementById('nameModalInput');
+const nameModalOk = document.getElementById('nameModalOk');
+const nameModalCancel = document.getElementById('nameModalCancel');
 const deleteGestureBtn = document.getElementById('deleteGestureBtn');
 const gestureThresholdEl = document.getElementById('gestureThreshold');
 const gestureThresholdOut = document.getElementById('gestureThresholdOut');
 const gestureCooldownEl = document.getElementById('gestureCooldown');
+const gestureTargetPathEl = document.getElementById('gestureTargetPath');
+const gestureTargetPropertyEl = document.getElementById('gestureTargetProperty');
+const gestureTargetValueEl = document.getElementById('gestureTargetValue');
 const gestureStatusEl = document.getElementById('gestureStatus');
 const gestureListEl = document.getElementById('gestureList');
+const helpIconEls = Array.from(document.querySelectorAll('.help-icon'));
+
+const HELP_TEXT = {
+    minDetection:
+        'How sure the model must be that a hand exists before tracking starts. Higher values reduce false positives but may miss hands.',
+    minPresence:
+        'How sure the tracker must be that the detected hand is still present in this frame. Higher values are stricter and can flicker in poor lighting.',
+    gestures:
+        'Capture a hand pose, then tune match settings. When a pose matches, Hand Bridge sends the configured target update over WebSocket.',
+    gestureThreshold:
+        'Maximum average landmark distance allowed for a match. Lower is stricter (fewer accidental matches), higher is more forgiving.',
+    gestureCooldown:
+        'Minimum wait time before the same gesture can trigger again after a send. Helps prevent rapid repeats from tiny movement changes.',
+    targetPath:
+        'Path to the Figma layer to update, using "/" separators. Example: "Page 1 / Frame A / Rectangle 1". Include page name for reliability.',
+    targetProperty:
+        'Which property to change on the target layer. Available options depend on layer type (for example, textContent only works on text layers).',
+    targetValue:
+        'New value sent to Figma for the selected property. Examples: "#FF0000" for color, "0.5" for opacity, "State=On;Size=L" for variants.',
+};
 
 function setStatus(text, kind) {
     statusEl.textContent = text;
     statusEl.classList.remove('ready', 'error');
     if (kind === 'ready') statusEl.classList.add('ready');
     if (kind === 'error') statusEl.classList.add('error');
+}
+
+function showHelpPopover(anchorEl, message) {
+    if (!helpPopoverEl) return;
+    helpPopoverEl.textContent = message;
+    helpPopoverEl.classList.remove('is-hidden');
+    const r = anchorEl.getBoundingClientRect();
+    const margin = 8;
+    const maxW = Math.min(352, window.innerWidth - margin * 2);
+    helpPopoverEl.style.maxWidth = `${maxW}px`;
+    let left = r.left;
+    let top = r.bottom + 8;
+    if (left + maxW > window.innerWidth - margin) {
+        left = window.innerWidth - margin - maxW;
+    }
+    if (left < margin) left = margin;
+    if (top > window.innerHeight - 80) {
+        top = Math.max(margin, r.top - 88);
+    }
+    helpPopoverEl.style.left = `${left}px`;
+    helpPopoverEl.style.top = `${top}px`;
+}
+
+function hideHelpPopover() {
+    if (!helpPopoverEl) return;
+    helpPopoverEl.classList.add('is-hidden');
 }
 
 function uid() {
@@ -90,11 +145,39 @@ mirrorEl.addEventListener('change', () => {
     videoWrap.classList.toggle('mirror', mirrorEl.checked);
 });
 
+for (const btn of helpIconEls) {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = btn.getAttribute('data-help-key');
+        const message = HELP_TEXT[key] ?? 'No help available yet.';
+        const visible = !helpPopoverEl?.classList.contains('is-hidden');
+        const sameMessage = helpPopoverEl?.textContent === message;
+        if (visible && sameMessage) hideHelpPopover();
+        else showHelpPopover(btn, message);
+    });
+}
+
+document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (
+        !(target instanceof HTMLElement) ||
+        target.closest('.help-icon') ||
+        target.closest('#helpPopover')
+    ) {
+        return;
+    }
+    hideHelpPopover();
+});
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideHelpPopover();
+});
+
 // ---------------------------
 // WebSocket bridge (client)
 // ---------------------------
 const WS_URL_KEY = 'handlab.wsUrl';
-wsUrlEl.value = localStorage.getItem(WS_URL_KEY) ?? 'ws://127.0.0.1:8787';
+wsUrlEl.value = localStorage.getItem(WS_URL_KEY) ?? 'ws://localhost:8787';
 
 let ws = null;
 let wsState = 'disconnected'; // disconnected | connecting | connected | error
@@ -112,14 +195,24 @@ function wsConnect() {
     if (!url) return;
     localStorage.setItem(WS_URL_KEY, url);
     try {
-        if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        if (
+            ws &&
+            (ws.readyState === WebSocket.OPEN ||
+                ws.readyState === WebSocket.CONNECTING)
+        ) {
             return;
         }
         setWsStatus('WS: connecting…', 'connecting');
         ws = new WebSocket(url);
-        ws.addEventListener('open', () => setWsStatus('WS: connected', 'connected'));
-        ws.addEventListener('close', () => setWsStatus('WS: disconnected', 'disconnected'));
-        ws.addEventListener('error', () => setWsStatus('WS: error (see console)', 'error'));
+        ws.addEventListener('open', () =>
+            setWsStatus('WS: connected', 'connected'),
+        );
+        ws.addEventListener('close', () =>
+            setWsStatus('WS: disconnected', 'disconnected'),
+        );
+        ws.addEventListener('error', () =>
+            setWsStatus('WS: error (see console)', 'error'),
+        );
     } catch (e) {
         console.error(e);
         setWsStatus('WS: error (invalid URL?)', 'error');
@@ -165,6 +258,10 @@ const GESTURES_KEY = 'handlab.gestures.v1';
  * - points: [{x,y,z} x21] normalized (wrist-relative + scale)
  * - threshold: number (avg distance)
  * - cooldownMs: number
+ * - targetPath: string (e.g. "Page 1 / Frame / Layer")
+ * - targetProperty:
+ *   "x" | "y" | "width" | "height" | "visible" | "opacity" | "color" | "textContent" | "variants"
+ * - targetValue: string
  * - lastTriggeredAt: number (runtime only)
  */
 let gestures = [];
@@ -177,14 +274,25 @@ function loadGestures() {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
         return parsed
-            .filter((g) => g && typeof g.id === 'string' && Array.isArray(g.points))
+            .filter(
+                (g) => g && typeof g.id === 'string' && Array.isArray(g.points),
+            )
             .map((g) => ({
                 id: g.id,
                 name: typeof g.name === 'string' ? g.name : g.id,
                 handedness: g.handedness ?? 'Unknown',
                 points: g.points,
                 threshold: typeof g.threshold === 'number' ? g.threshold : 0.1,
-                cooldownMs: typeof g.cooldownMs === 'number' ? g.cooldownMs : 500,
+                cooldownMs:
+                    typeof g.cooldownMs === 'number' ? g.cooldownMs : 500,
+                targetPath:
+                    typeof g.targetPath === 'string' ? g.targetPath : '',
+                targetProperty:
+                    typeof g.targetProperty === 'string'
+                        ? g.targetProperty
+                        : 'visible',
+                targetValue:
+                    typeof g.targetValue === 'string' ? g.targetValue : 'true',
                 lastTriggeredAt: 0,
             }));
     } catch (e) {
@@ -201,6 +309,9 @@ function saveGestures() {
         points: g.points,
         threshold: g.threshold,
         cooldownMs: g.cooldownMs,
+        targetPath: g.targetPath,
+        targetProperty: g.targetProperty,
+        targetValue: g.targetValue,
     }));
     localStorage.setItem(GESTURES_KEY, JSON.stringify(serializable));
 }
@@ -212,7 +323,7 @@ function setSelectedGesture(id) {
 
 function normalizeLandmarks(landmarks) {
     // landmarks: [{x,y,z}...] in normalized image coords
-    const wrist = landmarks[0] ?? { x: 0, y: 0, z: 0 };
+    const wrist = landmarks[0] ?? {x: 0, y: 0, z: 0};
     const rel = landmarks.map((p) => ({
         x: p.x - wrist.x,
         y: p.y - wrist.y,
@@ -224,7 +335,7 @@ function normalizeLandmarks(landmarks) {
         if (r > maxR) maxR = r;
     }
     const s = 1 / maxR;
-    return rel.map((p) => ({ x: p.x * s, y: p.y * s, z: p.z * s }));
+    return rel.map((p) => ({x: p.x * s, y: p.y * s, z: p.z * s}));
 }
 
 function avgDistance(a, b) {
@@ -247,20 +358,32 @@ function renderGestures() {
         deleteGestureBtn.disabled = true;
         gestureThresholdEl.disabled = true;
         gestureCooldownEl.disabled = true;
+        gestureTargetPathEl.disabled = true;
+        gestureTargetPropertyEl.disabled = true;
+        gestureTargetValueEl.disabled = true;
         return;
     }
 
-    const selected = gestures.find((g) => g.id === selectedGestureId) ?? gestures[0];
+    const selected =
+        gestures.find((g) => g.id === selectedGestureId) ?? gestures[0];
     if (!selectedGestureId) selectedGestureId = selected.id;
 
     gestureStatusEl.textContent = `${gestures.length} gesture(s). Selected: ${selected.name}`;
     deleteGestureBtn.disabled = false;
     gestureThresholdEl.disabled = false;
     gestureCooldownEl.disabled = false;
+    gestureTargetPathEl.disabled = false;
+    gestureTargetPropertyEl.disabled = false;
+    gestureTargetValueEl.disabled = false;
 
     gestureThresholdEl.value = String(clamp(selected.threshold, 0.01, 0.4));
-    gestureThresholdOut.textContent = Number(gestureThresholdEl.value).toFixed(2);
+    gestureThresholdOut.textContent = Number(gestureThresholdEl.value).toFixed(
+        2,
+    );
     gestureCooldownEl.value = String(clamp(selected.cooldownMs, 0, 5000));
+    gestureTargetPathEl.value = selected.targetPath ?? '';
+    gestureTargetPropertyEl.value = selected.targetProperty ?? 'visible';
+    gestureTargetValueEl.value = selected.targetValue ?? 'true';
 
     for (const g of gestures) {
         const li = document.createElement('li');
@@ -278,7 +401,9 @@ gestureThresholdEl.addEventListener('input', () => {
     const g = gestures.find((x) => x.id === selectedGestureId);
     if (!g) return;
     g.threshold = Number(gestureThresholdEl.value);
-    gestureThresholdOut.textContent = Number(gestureThresholdEl.value).toFixed(2);
+    gestureThresholdOut.textContent = Number(gestureThresholdEl.value).toFixed(
+        2,
+    );
     saveGestures();
 });
 
@@ -286,6 +411,27 @@ gestureCooldownEl.addEventListener('change', () => {
     const g = gestures.find((x) => x.id === selectedGestureId);
     if (!g) return;
     g.cooldownMs = clamp(Number(gestureCooldownEl.value), 0, 5000);
+    saveGestures();
+});
+
+gestureTargetPathEl.addEventListener('change', () => {
+    const g = gestures.find((x) => x.id === selectedGestureId);
+    if (!g) return;
+    g.targetPath = gestureTargetPathEl.value.trim();
+    saveGestures();
+});
+
+gestureTargetPropertyEl.addEventListener('change', () => {
+    const g = gestures.find((x) => x.id === selectedGestureId);
+    if (!g) return;
+    g.targetProperty = gestureTargetPropertyEl.value;
+    saveGestures();
+});
+
+gestureTargetValueEl.addEventListener('change', () => {
+    const g = gestures.find((x) => x.id === selectedGestureId);
+    if (!g) return;
+    g.targetValue = gestureTargetValueEl.value.trim();
     saveGestures();
 });
 
@@ -302,14 +448,60 @@ deleteGestureBtn.addEventListener('click', () => {
 
 let lastResult = null;
 
-captureBtn.addEventListener('click', () => {
+/** Electron/Chromium does not display `window.prompt`; use an in-app modal instead. */
+function promptGestureName(defaultName) {
+    return new Promise((resolve) => {
+        let settled = false;
+        const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            nameModal.classList.add('is-hidden');
+            window.removeEventListener('keydown', onKey);
+            resolve(value);
+        };
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') finish(null);
+            if (
+                e.key === 'Enter' &&
+                document.activeElement === nameModalInput
+            ) {
+                e.preventDefault();
+                const v = nameModalInput.value.trim();
+                finish(v || null);
+            }
+        };
+
+        nameModalInput.value = defaultName;
+        nameModal.classList.remove('is-hidden');
+        queueMicrotask(() => {
+            nameModalInput.focus();
+            nameModalInput.select();
+        });
+
+        nameModalOk.onclick = () => {
+            const v = nameModalInput.value.trim();
+            finish(v || null);
+        };
+        nameModalCancel.onclick = () => finish(null);
+
+        nameModal.onclick = (e) => {
+            if (e.target === nameModal) finish(null);
+        };
+
+        window.addEventListener('keydown', onKey);
+    });
+}
+
+captureBtn.addEventListener('click', async () => {
     const result = lastResult;
     const hand = result?.landmarks?.[0];
-    if (!hand) {
-        gestureStatusEl.textContent = 'No hand detected — put a hand in view, then capture.';
+    if (!hand?.length) {
+        gestureStatusEl.textContent =
+            'No hand detected — put a hand in view, then capture.';
         return;
     }
-    const name = window.prompt('Gesture name?', `Gesture ${gestures.length + 1}`);
+    const name = await promptGestureName(`Gesture ${gestures.length + 1}`);
     if (!name) return;
     const normalized = normalizeLandmarks(hand);
     const handedness =
@@ -323,6 +515,9 @@ captureBtn.addEventListener('click', () => {
         points: normalized,
         threshold: 0.1,
         cooldownMs: 500,
+        targetPath: '',
+        targetProperty: 'visible',
+        targetValue: 'true',
         lastTriggeredAt: 0,
     };
     gestures.unshift(g);
@@ -342,6 +537,8 @@ function resizeCanvas() {
 let handLandmarker = null;
 let lastOptionsKey = '';
 let HandLandmarkerClass = null;
+let handInView = false;
+let lastSentGestureId = null;
 
 async function rebuildLandmarker(
     FilesetResolver,
@@ -483,6 +680,14 @@ async function main() {
         setStatus('Preload bridge missing — run inside Electron.', 'error');
         return;
     }
+    if (window.electronAPI?.getAppBuildInfo && appBuildEl) {
+        try {
+            const info = await window.electronAPI.getAppBuildInfo();
+            appBuildEl.textContent = `Build ${info.buildVersion ?? '?'} · v${info.appVersion ?? '?'}`;
+        } catch {
+            appBuildEl.textContent = 'Build —';
+        }
+    }
 
     gestures = loadGestures();
     renderGestures();
@@ -544,7 +749,7 @@ async function main() {
                 ? info.appName
                 : (info.privacyListNameDev ?? 'Electron');
         const extra =
-            'On macOS, open Privacy & Security → Camera and enable the toggle for that app, then quit and reopen Hand Lab.';
+            'On macOS, open Privacy & Security → Camera and enable the toggle for that app, then quit and reopen Hand Bridge.';
         setStatus('Camera unavailable or permission denied.', 'error');
         cameraHelpText.textContent = `${e.name ?? 'Error'}: ${e.message}. Look for “${listName}” in the camera list. ${extra}`;
         cameraHelp.classList.remove('is-hidden');
@@ -578,8 +783,17 @@ async function main() {
             handsLabel.textContent = `Hands ${result.landmarks?.length ?? 0}`;
             drawResults(result, mirrorEl.checked);
 
+            const hasPrimaryHand = result.landmarks?.[0]?.length === 21;
+            if (!hasPrimaryHand) {
+                // Reset send gate only when the hand leaves view.
+                handInView = false;
+                lastSentGestureId = null;
+            } else if (!handInView) {
+                handInView = true;
+            }
+
             // Live matching (v1): match the first detected hand against all saved gestures.
-            if (gestures.length && result.landmarks?.[0]?.length === 21) {
+            if (gestures.length && hasPrimaryHand) {
                 const current = normalizeLandmarks(result.landmarks[0]);
                 let best = null;
                 for (const g of gestures) {
@@ -595,8 +809,10 @@ async function main() {
 
                     if (matched) {
                         const since = now - (g.lastTriggeredAt ?? 0);
-                        if (since >= (g.cooldownMs ?? 0)) {
+                        const isRepeatGesture = lastSentGestureId === g.id;
+                        if (!isRepeatGesture && since >= (g.cooldownMs ?? 0)) {
                             g.lastTriggeredAt = now;
+                            lastSentGestureId = g.id;
                             // Envelope designed for the Figma plugin receiver.
                             wsSend({
                                 v: 1,
@@ -605,8 +821,19 @@ async function main() {
                                 ts: Date.now(),
                                 payload: {
                                     kind: 'gesture_match',
-                                    gesture: {id: g.id, name: g.name, handedness: g.handedness},
+                                    gesture: {
+                                        id: g.id,
+                                        name: g.name,
+                                        handedness: g.handedness,
+                                    },
                                     score,
+                                    target: {
+                                        path: (g.targetPath ?? '').trim(),
+                                        property: (
+                                            g.targetProperty ?? 'visible'
+                                        ).trim(),
+                                        value: (g.targetValue ?? '').trim(),
+                                    },
                                 },
                             });
                         }

@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, systemPreferences, shell } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const { pathToFileURL } = require("url");
 const { execFile } = require("child_process");
 const { startBridge, getStatus, stopBridge } = require("./ws-bridge.cjs");
@@ -26,6 +27,20 @@ function mediapipePaths() {
     wasmBaseUrl: pathToFileURL(wasmDir).href + "/",
     modelUrl: pathToFileURL(modelFile).href,
   };
+}
+
+function getBuildVersion() {
+  try {
+    const p = path.join(__dirname, "..", "build-version.json");
+    const raw = fs.readFileSync(p, "utf8");
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.version === "number" && Number.isFinite(parsed.version)) {
+      return String(Math.max(0, Math.floor(parsed.version)));
+    }
+  } catch {
+    // ignore and fall back
+  }
+  return "?";
 }
 
 async function ensureCameraPermission() {
@@ -58,7 +73,7 @@ function createWindow() {
     height: 880,
     minWidth: 960,
     minHeight: 640,
-    title: "Hand Lab — MediaPipe",
+    title: "Hand Bridge — MediaPipe",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -75,6 +90,10 @@ app.whenReady().then(async () => {
   startBridge();
   ipcMain.handle("ws-bridge-status", () => getStatus());
   ipcMain.handle("mediapipe-paths", () => mediapipePaths());
+  ipcMain.handle("app-build-info", () => ({
+    appVersion: app.getVersion(),
+    buildVersion: getBuildVersion(),
+  }));
   ipcMain.handle("camera-permission", () => ensureCameraPermission());
   ipcMain.handle("open-camera-privacy-settings", async () => {
     if (process.platform === "darwin") await openMacCameraPrivacySettings();

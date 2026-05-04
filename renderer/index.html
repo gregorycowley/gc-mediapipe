@@ -4,17 +4,18 @@
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; media-src 'self' blob:; img-src 'self' blob: data:; connect-src 'self' blob: file: ws: wss:; worker-src 'self' blob:;" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hand Lab</title>
+    <title>Hand Bridge</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="app">
       <header class="header">
         <div class="brand">
-          <h1>Hand Lab</h1>
+          <h1>Hand Bridge</h1>
           <p class="tagline">MediaPipe hand tracking — local, offline after setup</p>
         </div>
         <div class="header-right">
+          <div class="statusline app-build" id="appBuild">Build —</div>
           <div class="status" id="status">Starting…</div>
           <div class="camera-help is-hidden" id="cameraHelp">
             <p class="camera-help-text" id="cameraHelpText"></p>
@@ -47,12 +48,18 @@
             </select>
           </label>
           <label class="field">
-            <span>Min detection confidence</span>
+            <span class="label-with-help">
+              <span>Min detection confidence</span>
+              <button type="button" class="help-icon" data-help-key="minDetection" aria-label="About min detection confidence">?</button>
+            </span>
             <input type="range" id="minHand" min="0.1" max="0.95" step="0.05" value="0.5" />
             <output id="minHandOut">0.5</output>
           </label>
           <label class="field">
-            <span>Min presence confidence</span>
+            <span class="label-with-help">
+              <span>Min presence confidence</span>
+              <button type="button" class="help-icon" data-help-key="minPresence" aria-label="About min presence confidence">?</button>
+            </span>
             <input type="range" id="minPresence" min="0.1" max="0.95" step="0.05" value="0.5" />
             <output id="minPresenceOut">0.5</output>
           </label>
@@ -76,7 +83,7 @@
           <h2>WebSocket</h2>
           <label class="field">
             <span>Bridge URL</span>
-            <input id="wsUrl" type="text" spellcheck="false" inputmode="url" placeholder="ws://127.0.0.1:8787" />
+            <input id="wsUrl" type="text" spellcheck="false" inputmode="url" placeholder="ws://localhost:8787" />
           </label>
           <div class="row">
             <button type="button" class="btn" id="wsConnectBtn">Connect</button>
@@ -85,19 +92,71 @@
           <div class="statusline" id="wsStatus">WS: disconnected</div>
           <div class="statusline" id="wsBridgeHint">—</div>
 
-          <h2>Gestures</h2>
+          <h2 class="heading-with-help">
+            <span>Gestures</span>
+            <button type="button" class="help-icon" data-help-key="gestures" aria-label="About gestures">?</button>
+          </h2>
           <div class="row">
             <button type="button" class="btn" id="captureBtn">Capture pose</button>
             <button type="button" class="btn btn-ghost" id="deleteGestureBtn" disabled>Delete</button>
           </div>
           <label class="field">
-            <span>Selected gesture threshold</span>
+            <span class="label-with-help">
+              <span>Selected gesture threshold</span>
+              <button type="button" class="help-icon" data-help-key="gestureThreshold" aria-label="About gesture threshold">?</button>
+            </span>
             <input type="range" id="gestureThreshold" min="0.01" max="0.40" step="0.01" value="0.10" disabled />
             <output id="gestureThresholdOut">0.10</output>
           </label>
           <label class="field">
-            <span>Cooldown (ms)</span>
+            <span class="label-with-help">
+              <span>Cooldown (ms)</span>
+              <button type="button" class="help-icon" data-help-key="gestureCooldown" aria-label="About gesture cooldown">?</button>
+            </span>
             <input type="number" id="gestureCooldown" min="0" max="5000" step="50" value="500" disabled />
+          </label>
+          <label class="field">
+            <span class="label-with-help">
+              <span>Figma layer path</span>
+              <button type="button" class="help-icon" data-help-key="targetPath" aria-label="About Figma layer path">?</button>
+            </span>
+            <input
+              type="text"
+              id="gestureTargetPath"
+              spellcheck="false"
+              placeholder="Page 1 / Frame A / Rectangle 1"
+              disabled
+            />
+          </label>
+          <label class="field">
+            <span class="label-with-help">
+              <span>Figma property</span>
+              <button type="button" class="help-icon" data-help-key="targetProperty" aria-label="About Figma property">?</button>
+            </span>
+            <select id="gestureTargetProperty" disabled>
+              <option value="x">x</option>
+              <option value="y">y</option>
+              <option value="width">width</option>
+              <option value="height">height</option>
+              <option value="visible">visible</option>
+              <option value="opacity">opacity</option>
+              <option value="color">color</option>
+              <option value="textContent">text content</option>
+              <option value="variants">variants</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="label-with-help">
+              <span>New value</span>
+              <button type="button" class="help-icon" data-help-key="targetValue" aria-label="About target value">?</button>
+            </span>
+            <input
+              type="text"
+              id="gestureTargetValue"
+              spellcheck="false"
+              placeholder="100, true, #FF0000, Hello, State=On;Size=L"
+              disabled
+            />
           </label>
           <div class="statusline" id="gestureStatus">No gestures yet.</div>
           <ol class="gesture-list" id="gestureList"></ol>
@@ -114,6 +173,24 @@
         </aside>
       </main>
     </div>
+
+    <div id="helpPopover" class="help-popover is-hidden" role="dialog" aria-live="polite"></div>
+
+    <!-- Electron does not show window.prompt(); use an in-app dialog instead. -->
+    <div id="nameModal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="nameModalTitle">
+      <div class="modal-card">
+        <h3 id="nameModalTitle" class="modal-title">Name this gesture</h3>
+        <label class="field">
+          <span>Name</span>
+          <input type="text" id="nameModalInput" autocomplete="off" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="nameModalCancel">Cancel</button>
+          <button type="button" class="btn" id="nameModalOk">Save</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="./app.js"></script>
   </body>
 </html>

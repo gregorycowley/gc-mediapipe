@@ -15,7 +15,7 @@ Hand Lab can host a small **WebSocket server** inside the Electron **main proces
 
 ## Default URL
 
-- **`ws://127.0.0.1:8787`** — loopback on the same machine (Hand Lab and Figma on one Mac).
+- **`ws://localhost:8787`** — loopback on the same machine (Hand Lab and Figma on one Mac).
 - The renderer shows a short **“In-app hub”** line with the URL and a live **client count** after the server is listening.
 
 ## Environment variables
@@ -23,7 +23,7 @@ Hand Lab can host a small **WebSocket server** inside the Electron **main proces
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `HAND_LAB_WS_PORT` | `8787` | TCP port for the WebSocket server. |
-| `HAND_LAB_WS_HOST` | `127.0.0.1` | **Listen address.** `127.0.0.1` = only this computer. **`0.0.0.0`** = all network interfaces so other devices on the LAN can connect using `ws://<this-computer-LAN-IP>:<port>`. |
+| `HAND_LAB_WS_HOST` | `localhost` | **Listen address.** `localhost` = only this computer. **`0.0.0.0`** = all network interfaces so other devices on the LAN can connect using `ws://<this-computer-LAN-IP>:<port>`. |
 
 Example (listen on all interfaces for classroom LAN):
 
@@ -70,9 +70,26 @@ The renderer sends JSON such as:
   "payload": {
     "kind": "gesture_match",
     "gesture": { "id": "…", "name": "…", "handedness": "…" },
-    "score": 0.08
+    "score": 0.08,
+    "target": {
+      "path": "Page 1 / Frame A / Rectangle 1",
+      "property": "visible",
+      "value": "true"
+    }
   }
 }
 ```
+
+The Figma plugin can apply `target` directly (without manual selection). Supported properties are:
+
+- `x` (number)
+- `y` (number)
+- `width` (number, `>= 0`)
+- `height` (number, `>= 0`)
+- `visible` (value like `true` / `false`)
+- `opacity` (value `0..1`)
+- `color` (value like `#FF0000`)
+- `textContent` (string; applies to text layers)
+- `variants` (string like `State=On;Size=L` or JSON object string)
 
 The hub forwards the raw message to other clients; it does not rewrite the payload.
