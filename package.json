@@ -1,6 +1,6 @@
 {
   "name": "gc-mediapipe",
-  "version": "0.9.04",
+  "version": "0.9.05",
   "description": "Hand Bridge: Electron + MediaPipe hand tracking app for students",
   "main": "electron/main.cjs",
   "scripts": {
